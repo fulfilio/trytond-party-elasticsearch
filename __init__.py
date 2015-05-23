@@ -6,9 +6,12 @@
     :license: BSD, see LICENSE for more details.
 """
 from trytond.pool import Pool
+from party import Party, Address
 
 
 def register():
     Pool.register(
+        Party,
+        Address,
         module='party_elasticsearch', type_='model'
     )
