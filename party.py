@@ -46,6 +46,9 @@ class Party:
         # Create connection with elastic server
         conn = config.get_es_connection(timeout=5)
 
+        if conn is None:
+            return []
+
         search_phrase = search_phrase.replace('%', '')
 
         # Search the query string in all fields
