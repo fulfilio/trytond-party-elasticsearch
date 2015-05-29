@@ -155,6 +155,12 @@ class TestParty(unittest.TestCase):
 
             self.Party.search_name('thomas 12345')
 
+            # Remove elastic search configuration and search again, it
+            # should not blow up
+            config.remove_section('elastic_search')
+            result1 = self.Party.search([('rec_name', 'ilike', '%thomas%')])
+            self.assertEqual(len(result1), 1)
+
 
 def suite():
     "Define suite"
