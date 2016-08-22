@@ -11,8 +11,7 @@ import time
 import unittest
 
 import trytond.tests.test_tryton
-from trytond.tests.test_tryton import DB_NAME, USER, CONTEXT, POOL
-from trytond.transaction import Transaction
+from trytond.tests.test_tryton import POOL, with_transaction
 
 from trytond.config import config
 # Add elastic search test configuration
@@ -66,100 +65,100 @@ class TestParty(unittest.TestCase):
             }
         ])
 
+    @with_transaction()
     def test_0010_test_party_indexing(self):
         """
         Tests indexing on creation and updation of party
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.update_mapping()
-            Address = POOL.get('party.address')
-            Country = POOL.get('country.country')
+        self.update_mapping()
+        Address = POOL.get('party.address')
+        Country = POOL.get('country.country')
 
-            party, = self.Party.create([{
-                'name': 'Bruce Wayne',
-            }])
-            self.assertEqual(self.IndexBacklog.search([], count=True), 1)
-            # Clear backlog list
-            self.IndexBacklog.delete(self.IndexBacklog.search([]))
-            self.assertEqual(self.IndexBacklog.search([], count=True), 0)
+        party, = self.Party.create([{
+            'name': 'Bruce Wayne',
+        }])
+        self.assertEqual(self.IndexBacklog.search([], count=True), 1)
+        # Clear backlog list
+        self.IndexBacklog.delete(self.IndexBacklog.search([]))
+        self.assertEqual(self.IndexBacklog.search([], count=True), 0)
 
-            # Update the party address
-            country, = Country.create([{
-                'name': 'United States',
-                'code': 'US',
-            }])
-            address, = Address.create([{
-                'name': 'Bruce Wayne',
-                'city': 'Gotham',
-                'party': party.id,
-            }])
-            self.assertEqual(self.IndexBacklog.search([], count=True), 1)
+        # Update the party address
+        country, = Country.create([{
+            'name': 'United States',
+            'code': 'US',
+        }])
+        address, = Address.create([{
+            'name': 'Bruce Wayne',
+            'city': 'Gotham',
+            'party': party.id,
+        }])
+        self.assertEqual(self.IndexBacklog.search([], count=True), 1)
 
-            # Update the party address
-            Address.write([address], {
-                'name': 'Bruce Wayne',
-                'city': 'Gotham',
-            })
-            self.assertEqual(self.IndexBacklog.search([], count=True), 1)
+        # Update the party address
+        Address.write([address], {
+            'name': 'Bruce Wayne',
+            'city': 'Gotham',
+        })
+        self.assertEqual(self.IndexBacklog.search([], count=True), 1)
 
-            # Create 2 parties
-            party1, party2 = self.create_parties()
+        # Create 2 parties
+        party1, party2 = self.create_parties()
 
-            # Update index on Elastic-Search server
-            self.IndexBacklog.update_index()
-            time.sleep(2)
+        # Update index on Elastic-Search server
+        self.IndexBacklog.update_index()
+        time.sleep(2)
 
+    @with_transaction()
     def test_0020_test_party_search(self):
         """
         Test the search logic
         """
-        with Transaction().start(DB_NAME, USER, context=CONTEXT):
-            self.update_mapping()
-            # Create 5 parties
-            self.Party.create([
-                {
-                    'name': 'Sharoon Thomas',
-                },
-                {
-                    'name': 'Prakash Pandey',
-                },
-                {
-                    'name': 'Tarun Bhardwaj',
-                },
-                {
-                    'name': 'Rituparna Panda',
-                },
-                {
-                    'name': 'Gaurav Butola',
-                },
-            ])
+        self.update_mapping()
+        # Create 5 parties
+        self.Party.create([
+            {
+                'name': 'Sharoon Thomas',
+            },
+            {
+                'name': 'Prakash Pandey',
+            },
+            {
+                'name': 'Tarun Bhardwaj',
+            },
+            {
+                'name': 'Rituparna Panda',
+            },
+            {
+                'name': 'Gaurav Butola',
+            },
+        ])
 
-            # Test cases for search
-            results = self.Party.search([])
-            self.assertEqual(len(results), 5)
+        # Test cases for search
+        results = self.Party.search([])
+        self.assertEqual(len(results), 5)
 
-            results = self.Party.search([('rec_name', 'ilike', '%thomas%')])
-            self.assertEqual(len(results), 1)
-            self.assert_(results[0].id)
+        results = self.Party.search([('rec_name', 'ilike', '%thomas%')])
+        self.assertEqual(len(results), 1)
+        self.assert_(results[0].id)
 
-            result1 = self.Party.search([
-                ('rec_name', 'ilike', '%thomas%'),
-                ('rec_name', 'ilike', '%haroon%'),
-            ])
-            self.assertEqual(len(result1), 1)
-            self.assert_(result1[0].id)
+        result1 = self.Party.search([
+            ('rec_name', 'ilike', '%thomas%'),
+            ('rec_name', 'ilike', '%haroon%'),
+        ])
+        self.assertEqual(len(result1), 1)
+        self.assert_(result1[0].id)
 
-            result1 = self.Party.search([('name', 'ilike', '%thomas%')])
-            self.assertEqual(len(result1), 1)
-            self.assert_(result1[0].id)
+        result1 = self.Party.search([('name', 'ilike', '%thomas%')])
+        self.assertEqual(len(result1), 1)
+        self.assert_(result1[0].id)
 
-            self.Party.search_name('thomas 12345')
+        self.Party.search_name('thomas 12345')
 
-            # Remove elastic search configuration and search again, it
-            # should not blow up
-            config.remove_section('elastic_search')
-            result1 = self.Party.search([('rec_name', 'ilike', '%thomas%')])
-            self.assertEqual(len(result1), 1)
+        # Remove elastic search configuration and search again, it
+        # should not blow up
+        config.remove_section('elastic_search')
+        result1 = self.Party.search([('rec_name', 'ilike', '%thomas%')])
+        self.assertEqual(len(result1), 1)
 
 
 def suite():

@@ -87,7 +87,7 @@ requires = [
 MODULE2PREFIX = {}
 
 MODULE = "party_elasticsearch"
-PREFIX = "openlabs"
+PREFIX = "fio"
 for dep in info.get('depends', []):
     if not re.match(r'(ir|res|webdav)(\W|$)', dep):
         requires.append(
