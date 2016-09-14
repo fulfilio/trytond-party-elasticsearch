@@ -74,6 +74,7 @@ class Party:
         return conn.search(
             query,
             doc_types=[config.make_type_name('party.party')],
+            scan=True,
             size=limit
         )
 
